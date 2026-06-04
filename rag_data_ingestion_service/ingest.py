@@ -8,17 +8,19 @@ Run:
 
 import os
 import re
+import sys
 import chromadb
 from chromadb.utils import embedding_functions
 
 from text_extraction import extract_pages
 from preprocessing import clean_pages
 from chunking import build_chunks
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from config import EMBED_MODEL
 
 BASE_DIR     = os.path.dirname(__file__)
 MAPPING_FILE = os.path.join(BASE_DIR, "data", "mapping")
 VECTOR_DIR   = os.path.join(BASE_DIR, "data", "vectordb")
-EMBED_MODEL  = "all-MiniLM-L6-v2"
 BATCH_SIZE   = 100
 
 

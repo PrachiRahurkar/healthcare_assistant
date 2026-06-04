@@ -5,11 +5,14 @@ Cosine similarity is used (collection was created with hnsw:space=cosine).
 """
 
 import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 import chromadb
 from chromadb.utils import embedding_functions
+from config import EMBED_MODEL
 
-VECTOR_DIR  = os.path.join(os.path.dirname(__file__), "..", "rag_data_ingestion_service", "data", "vectordb")
-EMBED_MODEL = "all-MiniLM-L6-v2"
+VECTOR_DIR = os.path.join(os.path.dirname(__file__), "..", "rag_data_ingestion_service", "data", "vectordb")
 
 _client: chromadb.PersistentClient | None = None
 _embed_fn = None
