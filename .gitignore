@@ -16,4 +16,4 @@ node_modules/
 data_ingestion_service/data/vectordb/
 
 # Claude Code internals
-.claude/settings.local.json
+.claude/
