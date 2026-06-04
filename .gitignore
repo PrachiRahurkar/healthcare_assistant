@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+.venv/
+
+# Node
+node_modules/
+
+# Vector DB (regenerate with ingest.py)
+data_ingestion_service/data/vectordb/
+
+# Claude Code internals
+.claude/settings.local.json

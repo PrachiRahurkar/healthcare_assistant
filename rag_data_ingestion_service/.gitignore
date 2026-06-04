@@ -1,0 +1,29 @@
+# Data — never commit CSVs
+data/
+docs/
+
+# Trained model artifacts
+models/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Environments
+.env
+.env.*
+*.env
+venv/
+.venv/
+
+# OS
+.DS_Store
+
+# Claude Code workspace
+.claude/

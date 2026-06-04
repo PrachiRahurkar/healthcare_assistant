@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "3000", "--directory", "frontend_service"],
+      "port": 3000
+    }
+  ],
+  "configurations_extra": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "/Users/prachi/anaconda3/envs/llms/bin/node",
+      "runtimeArgs": ["rag_backend_service/index.js"],
+      "port": 5001
+    }
+  ]
+}

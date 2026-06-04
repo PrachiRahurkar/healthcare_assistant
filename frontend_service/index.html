@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyHealth Assistant</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+      padding: 40px 48px;
+      width: 100%;
+      max-width: 620px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1e3a5f;
+      letter-spacing: -0.3px;
+    }
+
+    .field {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #f9fafb;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: #2563eb;
+      background: #ffffff;
+    }
+
+    textarea#question {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    button:hover { opacity: 0.92; }
+    button:active { transform: scale(0.99); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .divider {
+      border: none;
+      border-top: 1.5px solid #e5e7eb;
+      margin: 28px 0;
+    }
+
+    .answer-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    #answer {
+      width: 100%;
+      min-height: 120px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      color: #111827;
+      background: #f9fafb;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+    }
+
+    #answer.placeholder { color: #9ca3af; font-style: italic; }
+    #answer.error { color: #dc2626; border-color: #fca5a5; background: #fff5f5; }
+
+    .spinner {
+      display: none;
+      margin: 0 auto 8px;
+      width: 22px;
+      height: 22px;
+      border: 3px solid #dbeafe;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/>
+          <path d="M12 8v4l3 3"/>
+        </svg>
+      </div>
+      <h1>MyHealth Assistant</h1>
+    </div>
+
+    <div class="field">
+      <label for="plan-id">Plan ID</label>
+      <input type="text" id="plan-id" placeholder="Enter your plan ID" />
+    </div>
+
+    <div class="field">
+      <label for="question">How can I help you today?</label>
+      <textarea id="question" placeholder="Type your question here…"></textarea>
+    </div>
+
+    <button id="submit-btn" onclick="submitQuestion()">Submit</button>
+
+    <hr class="divider" />
+
+    <div class="answer-label">Answer</div>
+    <div class="spinner" id="spinner"></div>
+    <div id="answer" class="placeholder">Your answer will appear here.</div>
+  </div>
+
+  <script>
+    async function submitQuestion() {
+      const planId   = document.getElementById('plan-id').value.trim();
+      const question = document.getElementById('question').value.trim();
+      const answerEl = document.getElementById('answer');
+      const spinner  = document.getElementById('spinner');
+      const btn      = document.getElementById('submit-btn');
+
+      if (!planId)   { alert('Please enter a Plan ID.'); return; }
+      if (!question) { alert('Please enter a question.'); return; }
+
+      answerEl.className   = '';
+      answerEl.textContent = '';
+      spinner.style.display = 'block';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('http://localhost:5001/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan_id: planId, question })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Server error');
+        }
+
+        // Stream SSE tokens
+        const reader  = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = JSON.parse(line.slice(6));
+            if (payload.error) {
+              answerEl.className = 'error';
+              answerEl.textContent = 'Error: ' + payload.error;
+            } else if (payload.token) {
+              answerEl.textContent += payload.token;
+            }
+          }
+        }
+      } catch (err) {
+        answerEl.className   = 'error';
+        answerEl.textContent = 'Error: ' + err.message;
+      } finally {
+        spinner.style.display = 'none';
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('question').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitQuestion();
+    });
+  </script>
+</body>
+</html>
