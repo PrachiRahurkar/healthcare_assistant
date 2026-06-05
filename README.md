@@ -76,7 +76,8 @@ A RAG (Retrieval-Augmented Generation) system that answers questions about healt
 ```
 healthcare_assistant/
 ├── frontend_service/
-│   └── index.html                  # Single-page UI
+│   ├── index.html                  # Single-page UI
+│   └── requirements.txt            # No third-party Python packages
 │
 ├── rag_backend_service/
 │   ├── index.js                    # Express server — /ask endpoint
@@ -85,13 +86,15 @@ healthcare_assistant/
 │   ├── prepare_prompt.py           # Assemble system prompt + context
 │   ├── generation.py               # Pipeline entry: runs steps 1-4, streams to stdout
 │   ├── package.json
-│   └── package-lock.json
+│   ├── package-lock.json
+│   └── requirements.txt            # Python packages used by generation/retrieval
 │
 └── rag_data_ingestion_service/
     ├── text_extraction.py          # PDF → raw text per page (pdfplumber)
     ├── preprocessing.py            # Clean hyphenation, noise, whitespace
     ├── chunking.py                 # Hierarchical parent/child chunking
     ├── ingest.py                   # Orchestrator — run this to build the vector DB
+    ├── requirements.txt            # Python packages used by ingestion
     └── data/
         └── mapping                 # Plan ID → PDF path table
 ```
@@ -121,15 +124,25 @@ conda activate llms
 ### 2. Install Python dependencies
 
 ```bash
-pip install pdfplumber chromadb sentence-transformers anthropic
+pip install -r rag_backend_service/requirements.txt
+pip install -r rag_data_ingestion_service/requirements.txt
 ```
+
+`frontend_service/requirements.txt` is intentionally empty except for comments because the frontend is plain HTML/CSS/JS.
 
 ### 3. Install Node dependencies
 
 ```bash
+conda activate llms
 cd rag_backend_service
 npm install
 cd ..
+```
+
+Run `npm install` from the activated `llms` conda environment so it uses the conda-managed Node.js. If `npm` fails with an ICU library error from Homebrew Node, run:
+
+```bash
+PATH=/Users/prachi/anaconda3/envs/llms/bin:$PATH npm install
 ```
 
 ### 4. Add your PDFs and mapping
@@ -147,9 +160,15 @@ M0025185 | docs/SantaBarbara_BC_BS.pdf
 
 ### 5. Set your Anthropic API key
 
+Create a `.env` file in the project root (already gitignored):
+
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env
 ```
+
+The backend loads this automatically on startup via `dotenv` — no `export` needed.
+
+Get your key at [console.anthropic.com](https://console.anthropic.com/) → **API Keys**.
 
 ---
 
@@ -167,6 +186,8 @@ This extracts, cleans, chunks, and embeds all benefit booklets into ChromaDB. Ex
 
 ### Step 2 — Start the backend
 
+In one terminal:
+
 ```bash
 conda activate llms
 cd rag_backend_service
@@ -174,11 +195,19 @@ node index.js
 # Backend running on http://localhost:5001
 ```
 
-### Step 3 — Serve the frontend
-
-In a separate terminal:
+If your shell is still picking up a broken Homebrew Node/npm, start it with:
 
 ```bash
+cd rag_backend_service
+PATH=/Users/prachi/anaconda3/envs/llms/bin:$PATH node index.js
+```
+
+### Step 3 — Serve the frontend
+
+In a separate terminal, from the repo root:
+
+```bash
+conda activate llms
 python3 -m http.server 3000 --directory frontend_service
 ```
 
@@ -187,6 +216,53 @@ python3 -m http.server 3000 --directory frontend_service
 Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
 
 Enter a Plan ID (e.g. `UC280509`) and ask a question — the answer streams in from Claude as it generates.
+
+---
+
+## Troubleshooting
+
+### `Error: Cannot find module 'express'`
+
+Install the Node dependencies:
+
+```bash
+conda activate llms
+cd rag_backend_service
+npm install
+```
+
+Then restart the backend with `node index.js`.
+
+### `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`
+
+The browser received an HTML page instead of the backend's JSON/SSE response. Check that the Express backend is running on port `5001`, and that the frontend is running on port `3000`:
+
+```bash
+lsof -nP -iTCP:5001 -sTCP:LISTEN
+lsof -nP -iTCP:3000 -sTCP:LISTEN
+```
+
+If another process is using `5001`, stop it and restart the backend from `rag_backend_service`.
+
+### `No benefit booklet found for plan ID ...`
+
+The plan ID does not have a ChromaDB collection yet. Confirm the plan is listed in `rag_data_ingestion_service/data/mapping`, then rebuild the vector database:
+
+```bash
+conda activate llms
+cd rag_data_ingestion_service
+python ingest.py
+```
+
+### Claude API errors
+
+Confirm `.env` exists at the project root and contains your key:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Get your key at [console.anthropic.com](https://console.anthropic.com/) → **API Keys**.
 
 ---
 

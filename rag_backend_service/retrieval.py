@@ -4,6 +4,8 @@ Returns the *parent* text for each hit (richer context for the LLM).
 Cosine similarity is used (collection was created with hnsw:space=cosine).
 """
 
+from __future__ import annotations
+
 import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

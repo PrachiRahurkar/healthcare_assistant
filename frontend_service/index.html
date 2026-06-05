@@ -214,8 +214,21 @@
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Server error');
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const err = await res.json();
+            throw new Error(err.error || 'Server error');
+          }
+
+          const text = await res.text();
+          const message = text
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 240);
+          throw new Error(
+            `Backend returned ${res.status} ${res.statusText}: ${message || 'non-JSON response'}`
+          );
         }
 
         // Stream SSE tokens
@@ -233,12 +246,19 @@
 
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue;
-            const payload = JSON.parse(line.slice(6));
+            let payload;
+            try {
+              payload = JSON.parse(line.slice(6));
+            } catch {
+              throw new Error(`Invalid stream response from backend: ${line.slice(0, 160)}`);
+            }
+
             if (payload.error) {
-              answerEl.className = 'error';
-              answerEl.textContent = 'Error: ' + payload.error;
+              throw new Error(payload.error);
             } else if (payload.token) {
               answerEl.textContent += payload.token;
+            } else if (payload.done) {
+              return;
             }
           }
         }
