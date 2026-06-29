@@ -10,14 +10,16 @@ Usage:
 
 import sys
 import json
-import anthropic
+import os
+import openai
 
 from generate_query_embed import embed_query
 from retrieval import retrieve
 from prepare_prompt import build_messages
 
-MODEL   = "claude-sonnet-4-6"
-TOP_K   = 5
+FIREWORKS_BASE_URL = "https://api.fireworks.ai/inference/v1"
+MODEL   = "accounts/fireworks/models/gpt-oss-120b"
+TOP_K   = 10
 MAX_TOKENS = 1024
 
 
@@ -51,21 +53,29 @@ def main():
     # 3. Build prompt
     system_prompt, user_message = build_messages(question, chunks)
 
-    # 4. Stream from Claude
-    client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+    # 4. Stream from Fireworks
+    client = openai.OpenAI(
+        base_url=FIREWORKS_BASE_URL,
+        api_key=os.environ["FIREWORKS_API_KEY"],
+    )
 
     try:
-        with client.messages.stream(
+        stream = client.chat.completions.create(
             model=MODEL,
             max_tokens=MAX_TOKENS,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        ) as stream:
-            for text in stream.text_stream:
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            stream=True,
+        )
+        for chunk in stream:
+            text = chunk.choices[0].delta.content
+            if text:
                 sys.stdout.write(f"TOKEN:{text}\n")
                 sys.stdout.flush()
     except Exception as e:
-        sys.stdout.write(f"ERROR:Claude API error — {e}\n")
+        sys.stdout.write(f"ERROR:Fireworks API error — {e}\n")
         sys.stdout.flush()
         sys.exit(1)
 

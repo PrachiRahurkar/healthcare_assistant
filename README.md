@@ -1,6 +1,6 @@
 # MyHealth Assistant
 
-A RAG (Retrieval-Augmented Generation) system that answers questions about health insurance benefit booklets. Users enter their Plan ID and ask a question; the system retrieves the most relevant passages from that plan's booklet and streams an answer via Claude.
+A RAG (Retrieval-Augmented Generation) system that answers questions about health insurance benefit booklets. Users enter their Plan ID and ask a question; the system retrieves the most relevant passages from that plan's booklet and streams an answer via Fireworks AI.
 
 ---
 
@@ -55,8 +55,8 @@ A RAG (Retrieval-Augmented Generation) system that answers questions about healt
 │                                               to LLM            │
 └─────────────────────────────────────────────────────────────────┘
                             ▲
-                    Claude API (streaming)
-                    claude-sonnet-4-6
+                    Fireworks API (streaming)
+                    accounts/fireworks/models/gpt-oss-120b
 ```
 
 ### Key design decisions
@@ -66,8 +66,8 @@ A RAG (Retrieval-Augmented Generation) system that answers questions about healt
 | One ChromaDB collection per Plan ID | Zero cross-plan leakage — a query on plan A never touches plan B's data |
 | Hierarchical chunking (child → parent) | Small child chunks give precise vector matches; parent chunks give the LLM rich surrounding context |
 | `all-MiniLM-L6-v2` embeddings | Fast, local, no API key required — same model at ingest and query time |
-| SSE streaming | Tokens appear in the browser as Claude generates them — no waiting for the full response |
-| Node.js (HTTP) + Python (ML) | Express owns the HTTP layer; Python owns embeddings, retrieval, and Claude API calls |
+| SSE streaming | Tokens appear in the browser as the model generates them — no waiting for the full response |
+| Node.js (HTTP) + Python (ML) | Express owns the HTTP layer; Python owns embeddings, retrieval, and Fireworks API calls |
 
 ---
 
@@ -107,7 +107,7 @@ healthcare_assistant/
 
 - [Anaconda / Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 - A conda environment with Python 3.12 and Node.js 24 (see setup below)
-- An [Anthropic API key](https://console.anthropic.com/)
+- A [Fireworks AI API key](https://fireworks.ai/)
 - Benefit booklet PDFs placed in `rag_data_ingestion_service/data/docs/`
 
 ---
@@ -158,17 +158,17 @@ N5082015 | docs/NC_bmp.pdf
 M0025185 | docs/SantaBarbara_BC_BS.pdf
 ```
 
-### 5. Set your Anthropic API key
+### 5. Set your Fireworks API key
 
 Create a `.env` file in the project root (already gitignored):
 
 ```bash
-echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env
+echo 'FIREWORKS_API_KEY=fw_...' > .env
 ```
 
 The backend loads this automatically on startup via `dotenv` — no `export` needed.
 
-Get your key at [console.anthropic.com](https://console.anthropic.com/) → **API Keys**.
+Get your key at [fireworks.ai](https://fireworks.ai/) → **API Keys**.
 
 ---
 
@@ -215,7 +215,7 @@ python3 -m http.server 3000 --directory frontend_service
 
 Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
 
-Enter a Plan ID (e.g. `UC280509`) and ask a question — the answer streams in from Claude as it generates.
+Enter a Plan ID (e.g. `UC280509`) and ask a question — the answer streams in from Fireworks as it generates.
 
 ---
 
@@ -254,15 +254,15 @@ cd rag_data_ingestion_service
 python ingest.py
 ```
 
-### Claude API errors
+### Fireworks API errors
 
 Confirm `.env` exists at the project root and contains your key:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
+FIREWORKS_API_KEY=fw_...
 ```
 
-Get your key at [console.anthropic.com](https://console.anthropic.com/) → **API Keys**.
+Get your key at [fireworks.ai](https://fireworks.ai/) → **API Keys**.
 
 ---
 
@@ -273,6 +273,6 @@ Get your key at [console.anthropic.com](https://console.anthropic.com/) → **AP
 3. `generate_query_embed.py` encodes the question into a vector
 4. `retrieval.py` queries **only** the ChromaDB collection for that `plan_id`, returning the top-5 parent chunk texts ranked by cosine similarity
 5. `prepare_prompt.py` formats a system prompt + the retrieved passages + the question
-6. `generation.py` calls Claude (`claude-sonnet-4-6`) with streaming enabled
+6. `generation.py` calls Fireworks (`accounts/fireworks/models/gpt-oss-120b`) with streaming enabled
 7. Each token is written to stdout as `TOKEN:<text>` and piped through Express as a Server-Sent Event
 8. The browser appends each token to the answer box in real time
