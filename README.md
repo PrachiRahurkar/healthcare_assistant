@@ -24,13 +24,13 @@ A RAG (Retrieval-Augmented Generation) system that answers questions about healt
 │           ┌──────────────▼──────────────┐                       │
 │           │       generation.py         │  ← pipeline entry     │
 │           │  (orchestrates steps below) │                       │
-│           └──┬───────────┬─────────┬───┘                       │
-│              │           │         │                            │
-│   generate_query_embed.py │  retrieval.py   prepare_prompt.py  │
+│           └──┬───────────-┬─────────┬───┘                       │
+│              │            │         │                           │
+│   generate_query_embed.py │  retrieval.py   prepare_prompt.py   │
 │   Embed user question     │  Query ChromaDB  Format context +   │
-│   (all-MiniLM-L6-v2)     │  for plan's      question for LLM   │
-│                           │  collection                        │
-└───────────────────────────┼────────────────────────────────────┘
+│   (all-MiniLM-L6-v2)      │  for plan's      question for LLM   │
+│                           │  collection                         │
+└──────────────────────────-┼────────────────────────────────────-┘
                             │  top-k parent chunks
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -45,7 +45,7 @@ A RAG (Retrieval-Augmented Generation) system that answers questions about healt
 ┌─────────────────────────────────────────────────────────────────┐
 │              rag_data_ingestion_service/                        │
 │                                                                 │
-│  text_extraction.py  →  preprocessing.py  →  chunking.py       │
+│  text_extraction.py  →  preprocessing.py  →  chunking.py        │
 │  pdfplumber             fix hyphenation       Hierarchical:     │
 │  raw text per page      drop noise lines      parent ~1200 ch   │
 │                         normalize space       child  ~300 ch    │
